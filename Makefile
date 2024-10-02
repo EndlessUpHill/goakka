@@ -60,17 +60,50 @@ lint:
 	@echo "Running linter..."
 	golangci-lint run ./...
 
+start-containers:
+	@echo "Starting containers..."
+	docker-compose up -f docker/docker-compose.yml -d
+
+stop-containers:
+	@echo "Stopping containers..."
+	docker-compose down -f docker/docker-compose.yml
+
+start-redis:
+	@echo "Starting Redis container..."
+	docker-compose -f docker/docker-compose.yml up -d redis
+
+stop-redis:
+	@echo "Stopping Redis container..."
+	docker-compose -f docker/docker-compose.yml down redis
+
+start_nats:
+	@echo "Starting NATS container..."
+	docker-compose -f docker/docker-compose.yml up -d nats
+
+stop_nats:
+	@echo "Stopping NATS container..."
+	docker-compose -f docker/docker-compose.yml down nats
+
+
+
 # Help information
 .PHONY: help
 help:
 	@echo "Usage:"
-	@echo "  make          - Build the application"
-	@echo "  make dec      - Run app in development mode"
-	@echo "  make run      - Run the application"
-	@echo "  make test     - Run tests"
-	@echo "  make clean    - Clean the build files"
-	@echo "  make fmt      - Format Go files"
-	@echo "  make deps     - Install dependencies"
-	@echo "  make tools    - Install/update required tools"
-	@echo "  make lint     - Run static analysis"
+	@echo "  make                  - Build the application"
+	@echo "  make dec              - Run app in development mode"
+	@echo "  make run              - Run the application"
+	@echo "  make test             - Run tests"
+	@echo "  make clean            - Clean the build files"
+	@echo "  make fmt              - Format Go files"
+	@echo "  make deps             - Install dependencies"
+	@echo "  make tools            - Install/update required tools"
+	@echo "  make lint             - Run static analysis"
+	@echo "  make start-containers - Start containers"
+	@echo "  make stop-containers  - Stop containers"
+	@echo "  make start-redis      - Start Redis container"
+	@echo "  make stop-redis       - Stop Redis container"
+	@echo "  make start-nats       - Start NATS container"
+	@echo "  make stop-nats        - Stop NATS container"
+	@echo "  make help             - Show this help message"
 
