@@ -13,17 +13,22 @@ type Supervisor struct {
 	wg             sync.WaitGroup
 	ctx            context.Context
 	cancel         context.CancelFunc
+	broker         MessageBroker
 }
 
 // NewSupervisor creates a new supervisor with an optional timeout
-func NewSupervisor(ctx context.Context) *Supervisor {
+func NewSupervisor(ctx context.Context, broker MessageBroker) *Supervisor {
 	ctx, cancel := context.WithCancel(ctx)
+	if broker == nil {
+		broker = NewInMemoryBroker()
+	}
 	return &Supervisor{
 		actors:         make([]*BasicActor, 0),
 		subSupervisors: make([]*Supervisor, 0),
 		stop:           make(chan struct{}),
 		ctx:            ctx,
 		cancel:         cancel,
+		broker:         broker,
 	}
 }
 

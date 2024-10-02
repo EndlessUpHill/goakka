@@ -76,11 +76,11 @@ stop-redis:
 	@echo "Stopping Redis container..."
 	docker-compose -f docker/docker-compose.yml down redis
 
-start_nats:
+start-nats:
 	@echo "Starting NATS container..."
 	docker-compose -f docker/docker-compose.yml up -d nats
 
-stop_nats:
+stop-nats:
 	@echo "Stopping NATS container..."
 	docker-compose -f docker/docker-compose.yml down nats
 

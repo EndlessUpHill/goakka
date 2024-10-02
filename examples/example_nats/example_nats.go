@@ -8,19 +8,23 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/goakka/core"
+	"github.com/EndlessUpHill/goakka/core"
+	"github.com/EndlessUpHill/goakka/nats"
 )
 
 func main() {
-
+	// Create a Redis pub/sub system (replace with your Redis server URL)
 	fmt.Println("Starting application...")
+
+	// Create a NATS broker (connect to NATS on localhost:4222)
+	natsBroker := nats.NewNatsBroker("nats://localhost:4222")
 
 	// Create a root context with a 10-second timeout for testing
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel() // Ensure cancellation when the main function exits
 
 	// Create a top-level supervisor with the root context
-	supervisor := core.NewSupervisor(ctx)
+	supervisor := core.NewSupervisor(ctx, natsBroker)
 
 	// Create actors
 	actor1 := core.NewBasicActor()
@@ -34,7 +38,7 @@ func main() {
 	childCtx, childCancel := context.WithCancel(ctx)
 	defer childCancel() // Clean up the child context
 
-	childSupervisor := core.NewSupervisor(childCtx)
+	childSupervisor := core.NewSupervisor(childCtx, natsBroker)
 
 	// Create actors for the child supervisor
 	actor3 := core.NewBasicActor()
@@ -70,4 +74,5 @@ func main() {
 
 	fmt.Println("Application shutdown complete.")
 
+	// Create a NATS pub/sub system (replace with your NATS server URL)
 }
