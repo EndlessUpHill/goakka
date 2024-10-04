@@ -21,9 +21,10 @@ func TestNATSJetStreamPubSub(t *testing.T) {
 	testMessage := "Hello, NATS JetStream!"
 
 	// Create an actor
-	actor := core.NewBasicActor("test-actor", func(msg interface{}) {
+	actor := core.NewBasicActor("test-actor", func(res *core.ActorResult) *core.ActorResult {
 		// Check if the message is the expected one
-		assert.Equal(t, testMessage, msg)
+		assert.Equal(t, testMessage, res.Message)
+		return &core.ActorResult{}
 	})
 	actor.Start()
 

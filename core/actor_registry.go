@@ -27,7 +27,7 @@ func NewActorRegistry(size ...int) *ActorRegistry {
 func (ar *ActorRegistry) RegisterActor(actor Actor) {
     ar.Lock()
     defer ar.Unlock()
-    ar.actors[actor.GetID()] = actor
+    ar.actors[actor.GetName()] = actor
 }
 
 // GetActor retrieves an actor by ID

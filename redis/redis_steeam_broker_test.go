@@ -29,8 +29,9 @@ func TestRedisStreamPubSub(t *testing.T) {
 	testMessage := "Hello, Redis Stream!"
 
 	// Create an actor
-	actor := core.NewBasicActor("test-actor", func(msg interface{}) {
+	actor := core.NewBasicActor("test-actor", func(msg interface{}) *core.ActorResult {
 		assert.Equal(t, "Hello, Redis Stream!", msg)
+		return &core.ActorResult{}
 	})
 	actor.Start()
 

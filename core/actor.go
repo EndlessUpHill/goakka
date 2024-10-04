@@ -4,39 +4,59 @@ import (
 	"context"
 	"fmt"
 	"sync"
+
+	"github.com/google/uuid"
 )
+ 
+
+type ActorResult struct {
+	Error      error       
+	Action     int     
+	Message    interface{} 
+	name       string
+	id		 uuid.UUID
+}
 
 type Actor interface {
 	Start()
 	Stop()
-	ReceiveMessage(msg interface{})
+	ReceiveMessage(msg interface{}) *ActorResult
 	SendMessage(msg interface{})
-	GetID() string
+	GetID() uuid.UUID
+	GetName() string
 	SetWaitGroup(wg *sync.WaitGroup)
 	SetContext(ctx context.Context)
+	SetFailureChannel(chan *ActorResult)
+
 }
 
-type RecieveFunc func(msg interface{})
 type BasicActor struct {
-	id          string
+	id             uuid.UUID
+	name		   string
 	mailbox     chan interface{}
 	stop        chan struct{}
 	wg          *sync.WaitGroup
 	ctx         context.Context
-	receiveFunc RecieveFunc
+	receiveFunc func(result *ActorResult) *ActorResult
+	failureChannel chan *ActorResult
 }
 
-func NewBasicActor(id string, recieveFunc RecieveFunc) *BasicActor {
+func NewBasicActor(name string, recieveFunc func(result *ActorResult) *ActorResult) *BasicActor {
 	return &BasicActor{
-		id:          id,
+		id: uuid.New(),
+		name: name,
 		mailbox:     make(chan interface{}, 100),
 		stop:        make(chan struct{}),
 		receiveFunc: recieveFunc,
 	}
 }
 
-func (a *BasicActor) GetID() string {
+func (a *BasicActor) GetID() uuid.UUID {
 	return a.id
+}
+
+func (a *BasicActor) GetName() string {
+	return a.name
 }
 
 func (a *BasicActor) SetWaitGroup(wg *sync.WaitGroup) {
@@ -45,6 +65,10 @@ func (a *BasicActor) SetWaitGroup(wg *sync.WaitGroup) {
 
 func (a *BasicActor) SetContext(ctx context.Context) {
 	a.ctx = ctx
+}
+
+func (a *BasicActor) SetFailureChannel(failure chan *ActorResult) {
+	a.failureChannel = failure
 }
 
 func (a *BasicActor) Start() {
@@ -62,10 +86,21 @@ func (a *BasicActor) Start() {
 		for {
 			select {
 			case msg := <-a.mailbox:
+				var result *ActorResult
 				if a.receiveFunc != nil {
-					a.receiveFunc(msg)
+					actor := ActorResult{
+						Message: msg,
+						name: a.name,
+						id: a.id,
+					}
+					result = a.receiveFunc(&actor)
 				} else {
-					a.ReceiveMessage(msg)
+					result = a.ReceiveMessage(msg)
+				}
+
+				if result.Error != nil {
+					fmt.Printf("Actor %s encountered a failure: %v\n", a.GetID(), result.Error)
+					a.failureChannel <- result
 				}
 			case <-a.stop:
 				fmt.Printf("Stopping actor %s due to stop signal.\n", a.id)
@@ -88,8 +123,9 @@ func (a *BasicActor) Stop() {
 	}
 }
 
-func (a *BasicActor) ReceiveMessage(msg interface{}) {
+func (a *BasicActor) ReceiveMessage(msg interface{}) *ActorResult {
 	fmt.Printf("!!!Actor received message: %v\n", msg)
+	return &ActorResult{}
 }
 
 func (a *BasicActor) SendMessage(msg interface{}) {

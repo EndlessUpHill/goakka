@@ -19,7 +19,7 @@ type ExampleRedis struct {
 	core.BasicActor
 }
 
-func (a *ExampleRedis) ReceiveMessage(msg interface{}) {
+func (a *ExampleRedis) ReceiveMessage(msg interface{}) *core.ActorResult {
 	fmt.Printf("ExampleCoew Actor %s received message: %v\n", a.GetID(), msg)
 	if RedisRegistryInstance != nil {
 		actor, found := RedisRegistryInstance.GetActor("actor4")
@@ -28,6 +28,7 @@ func (a *ExampleRedis) ReceiveMessage(msg interface{}) {
 			RedisBrokerInstance.Publish("example", "Hello from ExampleCore. I broadcasted this message.")
 		}
 	}
+	return &core.ActorResult{}
 }
 
 func NewExampleRedis(id string) *ExampleRedis {

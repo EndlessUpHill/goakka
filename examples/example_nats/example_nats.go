@@ -23,19 +23,21 @@ func main() {
 
 	// Create actors
 	// Create and register actor1
-	actor1 := core.NewBasicActor("actor1", func(msg interface{}) {
-		fmt.Printf("Actor1 received: %v\n", msg)
+	actor1 := core.NewBasicActor("actor1", func(res *core.ActorResult) *core.ActorResult {
+		fmt.Printf("Actor1 received: %v\n", res.Message)
 		// Send message to actor2
 		if actor2Ref, exists := NatsRegistryInstance.GetActor("actor2"); exists {
 			actor2Ref.SendMessage("Hello from Actor1")
 		}
+		return res
 	})
 
 	NatsRegistryInstance.RegisterActor(actor1)
 	supervisor.SuperviseActor(actor1)
 
-	actor2 := core.NewBasicActor("actor2", func(msg interface{}) {
-		fmt.Printf("Actor2 received: %v\n", msg)
+	actor2 := core.NewBasicActor("actor2", func(res *core.ActorResult) *core.ActorResult {
+		fmt.Printf("Actor2 received: %v\n", res.Message)
+		return res
 	})
 
 	NatsRegistryInstance.RegisterActor(actor2)

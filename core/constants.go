@@ -1,0 +1,13 @@
+package core
+
+const (
+	ACTOR_RESTART = iota
+	ACTOR_RETRY
+	ACTOR_FAIL
+)
+
+const (
+	SUPERVISOR_RESTART = iota
+	SUPERVISOR_FAIL
+	SUPERVISOR_IGNORE
+)

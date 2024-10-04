@@ -18,7 +18,7 @@ func init() {
 type ExampleNats struct {
 	core.BasicActor
 }
-func (a *ExampleNats) ReceiveMessage(msg interface{}) {
+func (a *ExampleNats) ReceiveMessage(msg interface{}) *core.ActorResult {
 	fmt.Printf("ExampleCoew Actor %s received message: %v\n", a.GetID(), msg)
 	if NatsRegistryInstance != nil {
 		actor, found := NatsRegistryInstance.GetActor("actor4")
@@ -27,6 +27,7 @@ func (a *ExampleNats) ReceiveMessage(msg interface{}) {
 			NatsBrokerInstance.Publish("example", "Hello from ExampleCore. I broadcasted this message.")
 		}
 	}
+	return &core.ActorResult{}
 }
 
 func NewExampleNats(id string) *ExampleNats {

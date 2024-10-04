@@ -18,7 +18,7 @@ type ExampleCore struct {
 	core.BasicActor
 }
 
-func (a *ExampleCore) ReceiveMessage(msg interface{}) {
+func (a *ExampleCore) ReceiveMessage(msg interface{}) *core.ActorResult {
 	fmt.Printf("ExampleCore Actor %s received message: %v\n", a.GetID(), msg)
 	if RegistryInstance != nil {
 		actor, found := RegistryInstance.GetActor("actor1")
@@ -27,6 +27,7 @@ func (a *ExampleCore) ReceiveMessage(msg interface{}) {
 			BrokerInstance.Publish("example", "Hello from ExampleCore. I broadcasted this message.")
 		}
 	}
+	return &core.ActorResult{}
 }
 
 func NewExampleCore(id string) *ExampleCore {

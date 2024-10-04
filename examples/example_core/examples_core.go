@@ -24,27 +24,29 @@ func main() {
 
 	// Create actors
 	// Create and register actor1
-	actor1 := core.NewBasicActor("actor1", func(msg interface{}) {
-		fmt.Printf("Actor 1 received: %v\n", msg)
+	actor1 := core.NewBasicActor("actor1", func(res *core.ActorResult) *core.ActorResult {
+		fmt.Printf("Actor 1 received: %v\n", res.Message)
 		// Send message to actor2
 		if actor2Ref, exists := RegistryInstance.GetActor("actor2"); exists {
 			actor2Ref.SendMessage("Hello from Actor 1")
 		}
+		return res
 	})
 
 	RegistryInstance.RegisterActor(actor1)
 	supervisor.SuperviseActor(actor1)
 
-	actor2 := core.NewBasicActor("actor2", func(msg interface{}) {
-		fmt.Printf("Actor 2 received: %v\n", msg)
+	actor2 := core.NewBasicActor("actor2", func(res *core.ActorResult) *core.ActorResult {
+		fmt.Printf("Actor 2 received: %v\n", res.Message)
+		return res
 	})
 
 	RegistryInstance.RegisterActor(actor2)
 	supervisor.SuperviseActor(actor2)
 
 	// Supervise actors with the top-level supervisor
-	// supervisor.SuperviseActor(actor1)
-	// supervisor.SuperviseActor(actor2)
+	supervisor.SuperviseActor(actor1)
+	supervisor.SuperviseActor(actor2)
 
 	// Create a child supervisor with its own context (inherited from the parent)
 	//childCtx, childCancel := context.WithCancel(ctx)
@@ -70,13 +72,13 @@ func main() {
 	// Send test messages to all actors
 	fmt.Println("Sending test messages to actors...")
 
-	// actor1.SendMessage("Message for actor 1")
-	// actor2.SendMessage("Message for actor 2")
+	actor1.SendMessage("Message for actor 1")
+	actor2.SendMessage("Message for actor 2")
 	actor3.SendMessage("Message for actor 3")
 
 
-	// BrokerInstance.Subscribe("example", actor1)
-	// BrokerInstance.Subscribe("example", actor3)
+	BrokerInstance.Subscribe("example", actor1)
+	BrokerInstance.Subscribe("example", actor3)
 
 	BrokerInstance.Publish("example", "Subscribe to the example topic to receive this message.")
 
