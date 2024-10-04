@@ -18,7 +18,6 @@ func init() {
 type ExampleNats struct {
 	core.BasicActor
 }
-
 func (a *ExampleNats) ReceiveMessage(msg interface{}) {
 	fmt.Printf("ExampleCoew Actor %s received message: %v\n", a.GetID(), msg)
 	if NatsRegistryInstance != nil {

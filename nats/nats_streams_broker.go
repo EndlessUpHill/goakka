@@ -70,3 +70,16 @@ func (n *NATSJetStreamPubSub) Subscribe(actor *core.BasicActor) {
 
 	time.Sleep(1 * time.Second) // Simulate a delay to ensure message processing
 }
+
+func (b *NATSJetStreamPubSub) DeleteStream(name string)  error {
+	js := b.jetStream
+	if js == nil {
+		return nil
+	}
+	err := js.DeleteStream(name)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
