@@ -60,6 +60,7 @@ lint:
 	@echo "Running linter..."
 	golangci-lint run ./...
 
+# Docker tasks
 start-containers:
 	@echo "Starting containers..."
 	docker-compose up -f docker/docker-compose.yml -d
@@ -84,26 +85,59 @@ stop-nats:
 	@echo "Stopping NATS container..."
 	docker-compose -f docker/docker-compose.yml down nats
 
+# Release module (core, nats, redis) based on a provided version tag
+.PHONY: release-core release-nats release-redis
+release-core:
+	@echo "Releasing core module with tag $(VERSION)..."
+	cd core && git tag core/$(VERSION) && git push origin core/$(VERSION)
 
+release-nats:
+	@echo "Releasing nats module with tag $(VERSION)..."
+	cd nats && git tag nats/$(VERSION) && git push origin nats/$(VERSION)
+
+release-redis:
+	@echo "Releasing redis module with tag $(VERSION)..."
+	cd redis && git tag redis/$(VERSION) && git push origin redis/$(VERSION)
+
+# Fetch the latest tag for each module
+.PHONY: latest-core-tag latest-nats-tag latest-redis-tag
+latest-core-tag:
+	@echo "Fetching latest core tag..."
+	git fetch --tags
+	git describe --tags $(shell git rev-list --tags --max-count=1 -- core)
+
+latest-nats-tag:
+	@echo "Fetching latest nats tag..."
+	git fetch --tags
+	git describe --tags $(shell git rev-list --tags --max-count=1 -- nats)
+
+latest-redis-tag:
+	@echo "Fetching latest redis tag..."
+	git fetch --tags
+	git describe --tags $(shell git rev-list --tags --max-count=1 -- redis)
 
 # Help information
 .PHONY: help
 help:
 	@echo "Usage:"
-	@echo "  make                  - Build the application"
-	@echo "  make dec              - Run app in development mode"
-	@echo "  make run              - Run the application"
-	@echo "  make test             - Run tests"
-	@echo "  make clean            - Clean the build files"
-	@echo "  make fmt              - Format Go files"
-	@echo "  make deps             - Install dependencies"
-	@echo "  make tools            - Install/update required tools"
-	@echo "  make lint             - Run static analysis"
-	@echo "  make start-containers - Start containers"
-	@echo "  make stop-containers  - Stop containers"
-	@echo "  make start-redis      - Start Redis container"
-	@echo "  make stop-redis       - Stop Redis container"
-	@echo "  make start-nats       - Start NATS container"
-	@echo "  make stop-nats        - Stop NATS container"
-	@echo "  make help             - Show this help message"
-
+	@echo "                 - Build the application"
+	@echo "dev              - Run app in development mode"
+	@echo "run              - Run the application"
+	@echo "test             - Run tests"
+	@echo "clean            - Clean the build files"
+	@echo "fmt              - Format Go files"
+	@echo "deps             - Install dependencies"
+	@echo "tools            - Install/update required tools"
+	@echo "lint             - Run static analysis"
+	@echo "start-containers - Start containers"
+	@echo "stop-containers  - Stop containers"
+	@echo "start-redis      - Start Redis container"
+	@echo "stop-redis       - Stop Redis container"
+	@echo "start-nats       - Start NATS container"
+	@echo "stop-nats        - Stop NATS container"
+	@echo "release-core VERSION=vX.X.X  - Release core module with the specified tag"
+	@echo "release-nats VERSION=vX.X.X  - Release nats module with the specified tag"
+	@echo "release-redis VERSION=vX.X.X - Release redis module with the specified tag"
+	@echo "latest-core-tag               - Fetch latest core module tag"
+	@echo "latest-nats-tag               - Fetch latest nats module tag"
+	@echo "latest-redis-tag              - Fetch latest redis module tag"
