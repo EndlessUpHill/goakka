@@ -2,9 +2,10 @@ package nats
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/EndlessUpHill/goakka/core"
 	"github.com/nats-io/nats.go"
-	"log"
 )
 
 // NatsBroker is an implementation of the MessageBroker interface using NATS Pub/Sub
@@ -33,7 +34,7 @@ func (b *NatsBroker) Publish(topic string, msg interface{}) error {
 }
 
 // Subscribe subscribes an actor to a NATS Pub/Sub topic
-func (b *NatsBroker) Subscribe(topic string, actor *core.BasicActor) error {
+func (b *NatsBroker) Subscribe(topic string, actor core.Actor) error {
 	// Subscribe to the topic and process incoming messages
 	_, err := b.conn.Subscribe(topic, func(m *nats.Msg) {
 		// Pass the message payload to the actor

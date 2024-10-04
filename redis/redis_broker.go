@@ -35,7 +35,7 @@ func (b *RedisBroker) Publish(topic string, msg interface{}) error {
 }
 
 // Subscribe subscribes an actor to a Redis Pub/Sub topic
-func (b *RedisBroker) Subscribe(topic string, actor *core.BasicActor) error {
+func (b *RedisBroker) Subscribe(topic string, actor core.Actor) error {
 	sub := b.client.Subscribe(b.ctx, topic)
 
 	// Process messages in a separate goroutine

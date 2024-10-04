@@ -7,36 +7,31 @@ import (
 )
 
 type Supervisor struct {
-	actors         []*BasicActor
+	actors         []Actor
 	subSupervisors []*Supervisor
 	stop           chan struct{}
 	wg             sync.WaitGroup
 	ctx            context.Context
 	cancel         context.CancelFunc
-	broker         MessageBroker
 }
 
 // NewSupervisor creates a new supervisor with an optional timeout
-func NewSupervisor(ctx context.Context, broker MessageBroker) *Supervisor {
+func NewSupervisor(ctx context.Context) *Supervisor {
 	ctx, cancel := context.WithCancel(ctx)
-	if broker == nil {
-		broker = NewInMemoryBroker()
-	}
 	return &Supervisor{
-		actors:         make([]*BasicActor, 0),
+		actors:         make([]Actor, 0),
 		subSupervisors: make([]*Supervisor, 0),
 		stop:           make(chan struct{}),
 		ctx:            ctx,
 		cancel:         cancel,
-		broker:         broker,
 	}
 }
 
 // SuperviseActor adds an actor to the supervisor and starts it
-func (s *Supervisor) SuperviseActor(actor *BasicActor) {
+func (s *Supervisor) SuperviseActor(actor Actor) {
 	fmt.Println("Supervisor supervising actor...")
-	actor.setWaitGroup(&s.wg)
-	actor.setContext(s.ctx)
+	actor.SetWaitGroup(&s.wg)
+	actor.SetContext(s.ctx)
 	s.actors = append(s.actors, actor)
 	actor.Start()
 }
@@ -44,6 +39,7 @@ func (s *Supervisor) SuperviseActor(actor *BasicActor) {
 // SuperviseSupervisor adds a nested supervisor (creating a hierarchy)
 func (s *Supervisor) SuperviseSupervisor(subSupervisor *Supervisor) {
 	fmt.Println("Supervisor supervising sub-supervisor...")
+	subSupervisor.ctx = s.ctx
 	s.subSupervisors = append(s.subSupervisors, subSupervisor)
 }
 

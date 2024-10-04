@@ -7,19 +7,19 @@ import (
 
 type MessageBroker interface {
 	Publish(topic string, msg interface{}) error
-	Subscribe(topic string, actor *BasicActor) error
+	Subscribe(topic string, actor Actor) error
 }
 
 // InMemoryBroker is an in-memory implementation of the MessageBroker interface
 type InMemoryBroker struct {
-	subscribers map[string][]*BasicActor
+	subscribers map[string][]Actor
 	mu          sync.RWMutex
 }
 
 // NewInMemoryBroker creates a new in-memory broker
 func NewInMemoryBroker() *InMemoryBroker {
 	return &InMemoryBroker{
-		subscribers: make(map[string][]*BasicActor),
+		subscribers: make(map[string][]Actor),
 	}
 }
 
@@ -41,7 +41,7 @@ func (b *InMemoryBroker) Publish(topic string, msg interface{}) error {
 }
 
 // Subscribe adds an actor to the list of subscribers for a given topic
-func (b *InMemoryBroker) Subscribe(topic string, actor *BasicActor) error {
+func (b *InMemoryBroker) Subscribe(topic string, actor Actor) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 

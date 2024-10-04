@@ -4,17 +4,17 @@ import "sync"
 
 type PubSub interface {
 	Publish(topic string, msg interface{})
-	Subscribe(topic string, actor *BasicActor)
+	Subscribe(topic string, actor Actor)
 }
 
 type InMemoryPubSub struct {
-	subscribers map[string][]*BasicActor
+	subscribers map[string][]Actor
 	mu          sync.RWMutex
 }
 
 func NewInMemoryPubSub() *InMemoryPubSub {
 	return &InMemoryPubSub{
-		subscribers: make(map[string][]*BasicActor),
+		subscribers: make(map[string][]Actor),
 	}
 }
 
@@ -29,7 +29,7 @@ func (ps *InMemoryPubSub) Publish(topic string, msg interface{}) {
 	}
 }
 
-func (ps *InMemoryPubSub) Subscribe(topic string, actor *BasicActor) {
+func (ps *InMemoryPubSub) Subscribe(topic string, actor Actor) {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 
