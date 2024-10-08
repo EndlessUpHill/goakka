@@ -1,52 +1,24 @@
 # Variables
 APP_NAME := goakka
-GO_FILES := $(shell find . -type f -name '*.go')
+SUBMODULES := core
 
-# Default target
-.PHONY: all
-all: build
+.PHONY: all core nats redis
 
-# Build the application
-.PHONY: build
-build:
-	@echo "Building the application..."
-	go build -o bin/$(APP_NAME) ./main
+.PHONY: core
+core:
+	$(MAKE) -C core
+core-test:
+	$(MAKE) -C core test
 
-# Run the application
-.PHONY: run
-run:
-	@echo "Running the application..."
-	./bin/$(APP_NAME)
+nats:
+	$(MAKE) -C nats
+nats-test:
+	$(MAKE) -C nats test
 
-.PHONY: dev
-dev:
-	@echo "Running the application in development mode..."
-	go run main/main.go
-
-# Test the application
-.PHONY: test
-test:
-	@echo "Running tests..."
-	go test ./... -v
-
-# Clean the build and generated files
-.PHONY: clean
-clean:
-	@echo "Cleaning up..."
-	rm -rf bin/
-	go clean
-
-# Format Go files
-.PHONY: fmt
-fmt:
-	@echo "Formatting Go files..."
-	go fmt ./...
-
-# Install dependencies
-.PHONY: deps
-deps:
-	@echo "Tidying dependencies..."
-	go mod tidy
+redis:
+	$(MAKE) -C redis
+redis-test:
+	$(MAKE) -C redis test
 
 # Install/update required Go tools
 .PHONY: tools
@@ -54,11 +26,48 @@ tools:
 	@echo "Installing/updating required tools..."
 	go install golang.org/x/tools/cmd/goimports@latest
 
-# Run static analysis
-.PHONY: lint
-lint:
+
+tidy:
+	@for dir in $(SUBMODULES); do \
+    	echo "Running go mod tidy in $$dir..."; \
+    	cd $$dir && go mod tidy; \
+	done
+
+# Run go install in each submodule
+install:
+	@for dir in $(SUBMODULES); do \
+    	echo "Running go install in $$dir..."; \
+    	cd $$dir && go install; \
+	done
+
+# Run go install in each submodule
+lint: 
 	@echo "Running linter..."
-	golangci-lint run ./...
+	@for dir in $(SUBMODULES); do \
+    	echo "Running go install in $$dir..."; \
+    	cd $$dir && go install; \
+	done
+
+test:
+	@> go-test-report.txt  # Clear existing report file
+	@for dir in $(SUBMODULES); do \
+		echo "Running go test in $$dir..."; \
+		(cd $$dir && go test ./... -v) >> go-test-report.txt 2>&1; \
+	done
+
+fmt:
+	@for dir in $(SUBMODULES); do \
+		echo "Running go fmt in $$dir..."; \
+		cd $$dir && go fmt ./...; \
+	done
+
+.PHONY: cover
+cover:
+	@mkdir -p cover
+	@for dir in $(SUBMODULES); do \
+		echo "Generating coverage for $$dir..."; \
+		(cd $$dir && go test -coverprofile=coverage.out ./... && mv coverage.out ../cover/$$dir-coverage.out && go tool cover -html=../cover/$$dir-coverage.out -o ../cover/$$dir-coverage.html); \
+	done
 
 # Docker tasks
 start-containers:
@@ -141,3 +150,6 @@ help:
 	@echo "latest-core-tag               - Fetch latest core module tag"
 	@echo "latest-nats-tag               - Fetch latest nats module tag"
 	@echo "latest-redis-tag              - Fetch latest redis module tag"
+
+
+ci-build: tools tidy install fmt lint test

@@ -7,14 +7,13 @@ import (
 
 	"github.com/google/uuid"
 )
- 
 
 type ActorResult struct {
-	Error      error       
-	Action     int     
-	Message    interface{} 
-	name       string
-	id		 uuid.UUID
+	Error   error
+	Action  int
+	Message interface{}
+	name    string
+	id      uuid.UUID
 }
 
 type Actor interface {
@@ -27,25 +26,28 @@ type Actor interface {
 	SetWaitGroup(wg *sync.WaitGroup)
 	SetContext(ctx context.Context)
 	SetFailureChannel(chan *ActorResult)
-
 }
 
 type BasicActor struct {
 	id             uuid.UUID
-	name		   string
-	mailbox     chan interface{}
-	stop        chan struct{}
-	wg          *sync.WaitGroup
-	ctx         context.Context
-	receiveFunc func(result *ActorResult) *ActorResult
+	name           string
+	mailbox        chan interface{}
+	stop           chan struct{}
+	wg             *sync.WaitGroup
+	ctx            context.Context
+	receiveFunc    func(result *ActorResult) *ActorResult
 	failureChannel chan *ActorResult
 }
 
 func NewBasicActor(name string, recieveFunc func(result *ActorResult) *ActorResult) *BasicActor {
+	return NewBasicActorWithMailboxSize(name, 100, recieveFunc)
+}
+
+func NewBasicActorWithMailboxSize(name string, size int, recieveFunc func(result *ActorResult) *ActorResult) *BasicActor {
 	return &BasicActor{
-		id: uuid.New(),
-		name: name,
-		mailbox:     make(chan interface{}, 100),
+		id:          uuid.New(),
+		name:        name,
+		mailbox:     make(chan interface{}, size),
 		stop:        make(chan struct{}),
 		receiveFunc: recieveFunc,
 	}
@@ -76,6 +78,9 @@ func (a *BasicActor) Start() {
 	if a.wg != nil {
 		a.wg.Add(1)
 	}
+	if a.ctx == nil {
+		a.ctx = context.Background()
+	}
 	go func() {
 		defer func() {
 			fmt.Printf("Actor %s finished.\n", a.id)
@@ -90,8 +95,8 @@ func (a *BasicActor) Start() {
 				if a.receiveFunc != nil {
 					actor := ActorResult{
 						Message: msg,
-						name: a.name,
-						id: a.id,
+						name:    a.name,
+						id:      a.id,
 					}
 					result = a.receiveFunc(&actor)
 				} else {

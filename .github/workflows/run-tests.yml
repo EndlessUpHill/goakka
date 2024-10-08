@@ -1,0 +1,42 @@
+name: Test Go Code
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # services:
+    #   redis:
+    #     image: redis:6.2
+    #     ports:
+    #       - 6379:6379
+    #   nats:
+    #     image: nats:2.7.4
+    #     ports:
+    #       - 4222:4222
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+
+    - name: Install make (if missing)
+      run: sudo apt-get update && sudo apt-get install -y make
+
+    - name: Install dependencies and tidy
+      run: make ci-build
+
+    # - name: Upload Go Test Results
+    #   if: always()
+    #   uses: actions/upload-artifact@v3
+    #   with:
+    #     name: go-test-results
+    #     path: ./go-test-report.txt

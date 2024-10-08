@@ -8,22 +8,21 @@ import (
 	"github.com/google/uuid"
 )
 
-
 type SupervisorActorResult struct {
-	Action     		int       
-	Result          *ActorResult 
+	Action int
+	Result *ActorResult
 }
 
 type Supervisor struct {
-	id               uuid.UUID                   // UUID for each supervisor
-	child            bool
-	actors           map[uuid.UUID]Actor            // Changed to a map with actor name as key
-	subSupervisors   map[uuid.UUID]*Supervisor
-	stop           chan struct{}
-	wg             sync.WaitGroup
-	ctx            context.Context
-	cancel         context.CancelFunc
-	actorMonitor   *ActorMonitor
+	id                uuid.UUID // UUID for each supervisor
+	child             bool
+	actors            map[uuid.UUID]Actor // Changed to a map with actor name as key
+	subSupervisors    map[uuid.UUID]*Supervisor
+	stop              chan struct{}
+	wg                sync.WaitGroup
+	ctx               context.Context
+	cancel            context.CancelFunc
+	actorMonitor      *ActorMonitor
 	supervisorMonitor *SupervisorMonitor
 }
 
@@ -31,9 +30,9 @@ type Supervisor struct {
 func NewSupervisor(ctx context.Context) *Supervisor {
 	ctx, cancel := context.WithCancel(ctx)
 	s := &Supervisor{
-		id:             uuid.New(),           
-		actors:         make(map[uuid.UUID]Actor),    
-		subSupervisors: make(map[uuid.UUID]*Supervisor), 
+		id:             uuid.New(),
+		actors:         make(map[uuid.UUID]Actor),
+		subSupervisors: make(map[uuid.UUID]*Supervisor),
 		stop:           make(chan struct{}),
 		ctx:            ctx,
 		cancel:         cancel,
@@ -54,7 +53,7 @@ func (s *Supervisor) SuperviseActor(actor Actor) {
 	actor.SetWaitGroup(&s.wg)
 	actor.SetContext(s.ctx)
 	actor.SetFailureChannel(s.actorMonitor.GetInboundChannel())
-	s.actors[actor.GetID()] = actor 
+	s.actors[actor.GetID()] = actor
 	actor.Start()
 }
 
@@ -109,7 +108,7 @@ func (s *Supervisor) Wait() {
 
 func (s *Supervisor) handleActorFailure(result *ActorResult) {
 	actor := s.findActor(result.id)
-	
+
 	switch result.Action {
 	case ACTOR_RESTART:
 		fmt.Println("Restarting actor due to critical error...")
@@ -139,7 +138,7 @@ func (s *Supervisor) reportErrorToParent(result *ActorResult) {
 }
 
 func (s *Supervisor) handleSupervisorFailure(result *SupervisorActorResult) {
-	
+
 	switch result.Action {
 	case SUPERVISOR_RESTART:
 		fmt.Println("Restarting actor due to critical error...")
@@ -147,7 +146,7 @@ func (s *Supervisor) handleSupervisorFailure(result *SupervisorActorResult) {
 
 	case SUPERVISOR_FAIL:
 		fmt.Println("Propagating failure to parent core...")
-		// TODO RELAY TO NEXT LAYER 
+		// TODO RELAY TO NEXT LAYER
 	}
 }
 
@@ -158,6 +157,3 @@ func (s *Supervisor) findActor(id uuid.UUID) Actor {
 	}
 	return nil // TODO: Handle if actor is not found, maybe return an error
 }
-
-
-
