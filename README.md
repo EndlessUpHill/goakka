@@ -1,8 +1,7 @@
 # goAkka
 
-![Build Status](https://github.com/EndlessUpHill/goAkka/actions/workflows/run-tests.yml/badge.svg)
+[![Go Version](https://img.shields.io/badge/go-v1.22.5-blue)](https://golang.org) [![License](https://img.shields.io/github/license/EndlessUpHill/goAkka)](LICENSE) ![Build Status](https://github.com/EndlessUpHill/goAkka/actions/workflows/run-tests.yml/badge.svg)
 
-[![Go Version](https://img.shields.io/github/go-mod/go-version/EndlessUpHill/goAkka)](https://golang.org) [![License](https://img.shields.io/github/license/EndlessUpHill/goAkka)](LICENSE) [![Build Status](https://github.com/EndlessUpHill/goAkka/actions/workflows/go.yml/badge.svg)](https://github.com/EndlessUpHill/goAkka/actions)
 
 ## Overview
 
