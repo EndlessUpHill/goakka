@@ -1,0 +1,6 @@
+.settings
+.idea
+
+go-test-report*
+goakka.iml
+core-cover*

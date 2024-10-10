@@ -1,6 +1,6 @@
 # Variables
 APP_NAME := goakka
-SUBMODULES := core
+SUBMODULES := core redis
 
 .PHONY: all core nats redis
 
@@ -64,6 +64,14 @@ fmt:
 .PHONY: cover
 cover:
 	@mkdir -p cover
+	@for dir in $(SUBMODULES); do \
+		echo "Generating coverage for $$dir..."; \
+		(cd $$dir && go test -coverprofile=coverage.out ./... && mv coverage.out ../cover/$$dir-coverage.out && go tool cover -html=../cover/$$dir-coverage.out -o ../cover/$$dir-coverage.html); \
+	done
+
+.PHONY: coverage
+coverage:
+	@mkdir -p coverage
 	@for dir in $(SUBMODULES); do \
 		echo "Generating coverage for $$dir..."; \
 		(cd $$dir && go test -coverprofile=coverage.out ./... && mv coverage.out ../cover/$$dir-coverage.out && go tool cover -html=../cover/$$dir-coverage.out -o ../cover/$$dir-coverage.html); \

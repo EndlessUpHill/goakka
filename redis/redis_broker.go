@@ -13,6 +13,7 @@ import (
 type RedisBroker struct {
 	client *redis.Client
 	ctx    context.Context
+	cancel context.CancelFunc // To cancel the subscription goroutines
 }
 
 // NewRedisBroker creates a new Redis broker
@@ -21,17 +22,22 @@ func NewRedisBroker(redisAddr string) *RedisBroker {
 	client := redis.NewClient(&redis.Options{
 		Addr: redisAddr,
 	})
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 
 	return &RedisBroker{
 		client: client,
 		ctx:    ctx,
+		cancel: cancel,
 	}
 }
 
 // Publish sends a message to a Redis Pub/Sub topic
 func (b *RedisBroker) Publish(topic string, msg interface{}) error {
-	return b.client.Publish(b.ctx, topic, msg).Err()
+	err := b.client.Publish(b.ctx, topic, msg).Err()
+	if err != nil {
+		log.Printf("Error publishing message to topic %s: %v", topic, err)
+	}
+	return err
 }
 
 // Subscribe subscribes an actor to a Redis Pub/Sub topic
@@ -40,16 +46,37 @@ func (b *RedisBroker) Subscribe(topic string, actor core.Actor) error {
 
 	// Process messages in a separate goroutine
 	go func() {
-		for {
-			msg, err := sub.ReceiveMessage(b.ctx)
-			if err != nil {
-				log.Printf("error receiving message: %v", err)
-				return
-			}
+		defer sub.Close()
 
-			actor.SendMessage(msg.Payload)
+		for {
+			select {
+			case <-b.ctx.Done():
+				// Handle context cancellation (shutdown)
+				fmt.Println("Subscription for topic", topic, "has been cancelled.")
+				return
+
+			default:
+				// Receive messages from Redis Pub/Sub
+				msg, err := sub.ReceiveMessage(b.ctx)
+				if err != nil {
+					log.Printf("Error receiving message from topic %s: %v", topic, err)
+					return
+				}
+
+				// Send the message to the actor
+				actor.SendMessage(msg.Payload)
+			}
 		}
 	}()
 
 	return nil
+}
+
+// Close gracefully stops the Redis broker and cancels all subscriptions
+func (b *RedisBroker) Close() {
+	// Cancel the context to stop all subscription goroutines
+	b.cancel()
+
+	// Close the Redis client connection
+	b.client.Close()
 }

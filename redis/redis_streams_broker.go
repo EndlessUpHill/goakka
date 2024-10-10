@@ -2,85 +2,112 @@ package redis
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/EndlessUpHill/goakka/core"
+	"github.com/go-redis/redis/v8"
 )
 
-type RedisStreamPubSub struct {
+// RedisStreamsBroker is an implementation of the MessageBroker interface using Redis Streams
+type RedisStreamsBroker struct {
 	client     *redis.Client
-	streamName string
-	groupName  string
-	consumer   string
 	ctx        context.Context
+	cancel     context.CancelFunc
+	groupName  string
+	consumerID string
 }
 
-// NewRedisStreamPubSub creates a new Redis stream-based pub/sub system
-func NewRedisStreamPubSub(addr, streamName, groupName, consumer string) *RedisStreamPubSub {
+// NewRedisStreamsBroker creates a new Redis Streams broker
+func NewRedisStreamsBroker(redisAddr, groupName, consumerID string) *RedisStreamsBroker {
+	fmt.Println("Creating new Redis Streams broker...")
 	client := redis.NewClient(&redis.Options{
-		Addr: addr,
+		Addr: redisAddr,
 	})
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 
-	// Create the stream and consumer group if they don't exist
-	_, err := client.XGroupCreateMkStream(ctx, streamName, groupName, "0").Result()
-	if err != nil && err.Error() != "BUSYGROUP Consumer Group name already exists" {
-		log.Fatalf("Error creating consumer group: %v", err)
-	}
-
-	return &RedisStreamPubSub{
+	return &RedisStreamsBroker{
 		client:     client,
-		streamName: streamName,
-		groupName:  groupName,
-		consumer:   consumer,
 		ctx:        ctx,
+		cancel:     cancel,
+		groupName:  groupName,
+		consumerID: consumerID,
 	}
 }
 
-// Publish a message to the Redis stream
-func (r *RedisStreamPubSub) Publish(msg string) {
-	err := r.client.XAdd(r.ctx, &redis.XAddArgs{
-		Stream: r.streamName,
-		Values: map[string]interface{}{"message": msg},
-	}).Err()
+// Publish sends a message to a Redis stream
+func (b *RedisStreamsBroker) Publish(stream string, msg interface{}) error {
+	id, err := b.client.XAdd(b.ctx, &redis.XAddArgs{
+		Stream: stream,
+		Values: msg,
+	}).Result()
 	if err != nil {
-		log.Printf("Error adding message to stream: %v", err)
+		log.Printf("Error adding message to stream %s: %v", stream, err)
+		return err
 	}
+	fmt.Printf("Message added to stream %s with ID %s\n", stream, id)
+	return nil
 }
 
-// Subscribe an actor to the Redis stream via a consumer group
-func (r *RedisStreamPubSub) Subscribe(actor *core.BasicActor) {
+// Subscribe subscribes an actor to a Redis stream group
+func (b *RedisStreamsBroker) Subscribe(stream string, actor core.Actor) error {
+	// Create the consumer group if it doesn't exist
+	err := b.client.XGroupCreateMkStream(b.ctx, stream, b.groupName, "0").Err()
+	if err != nil && err != redis.Nil {
+		log.Printf("Error creating group %s on stream %s: %v", b.groupName, stream, err)
+		return err
+	}
+
+	// Process messages in a separate goroutine
 	go func() {
 		for {
-			// Read messages from the consumer group
-			result, err := r.client.XReadGroup(r.ctx, &redis.XReadGroupArgs{
-				Group:    r.groupName,
-				Consumer: r.consumer,
-				Streams:  []string{r.streamName, ">"},
-				Count:    1,
-				Block:    time.Second * 5,
-			}).Result()
+			select {
+			case <-b.ctx.Done():
+				fmt.Println("Subscription for stream", stream, "has been cancelled.")
+				return
+			default:
+				// Read messages from the stream using the consumer group
+				entries, err := b.client.XReadGroup(b.ctx, &redis.XReadGroupArgs{
+					Group:    b.groupName,
+					Consumer: b.consumerID,
+					Streams:  []string{stream, ">"},
+					Count:    1,
+					Block:    5 * time.Second, // Block for 5 seconds if no message
+				}).Result()
 
-			if err != nil && err != redis.Nil {
-				log.Printf("Error reading from stream: %v", err)
-				continue
-			}
+				if err != nil && err != redis.Nil {
+					log.Printf("Error reading message from stream %s: %v", stream, err)
+					continue
+				}
 
-			for _, stream := range result {
-				for _, message := range stream.Messages {
-					msg := message.Values["message"].(string)
-					actor.SendMessage(msg)
-					// Acknowledge the message after it's been processed
-					_, err := r.client.XAck(r.ctx, r.streamName, r.groupName, message.ID).Result()
-					if err != nil {
-						log.Printf("Error acknowledging message: %v", err)
+				for _, entry := range entries {
+					for _, msg := range entry.Messages {
+
+						// Send the message to the actor
+						actor.SendMessage(msg.Values)
+
+						// Acknowledge the message after processing
+						err = b.client.XAck(b.ctx, stream, b.groupName, msg.ID).Err()
+						if err != nil {
+							log.Printf("Error acknowledging message %s in stream %s: %v", msg.ID, stream, err)
+						} else {
+							fmt.Printf("Message %s acknowledged in stream %s\n", msg.ID, stream)
+						}
 					}
 				}
 			}
 		}
 	}()
+
+	return nil
 }
 
+// Close gracefully stops the Redis Streams broker and cancels all subscriptions
+func (b *RedisStreamsBroker) Close() {
+	// Cancel the context to stop all subscription goroutines
+	b.cancel()
 
+	// Close the Redis client connection
+	b.client.Close()
+}
