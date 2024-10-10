@@ -9,15 +9,17 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    # services:
-    #   redis:
-    #     image: redis:6.2
-    #     ports:
-    #       - 6379:6379
-    #   nats:
-    #     image: nats:2.7.4
-    #     ports:
-    #       - 4222:4222
+    services:
+      redis:
+        image: redis:6.2
+        ports:
+          - 6379:6379
+        options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 10s --health-retries 20
+      # nats:
+      #   image: nats:2.7.4
+      #   ports:
+      #     - 4222:4222
+      #   options: --health-cmd "curl -s http://localhost:4222" --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
     - name: Checkout code

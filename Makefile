@@ -31,6 +31,7 @@ tidy:
 	@for dir in $(SUBMODULES); do \
     	echo "Running go mod tidy in $$dir..."; \
     	cd $$dir && go mod tidy; \
+		cd ..; \
 	done
 
 # Run go install in each submodule
@@ -38,6 +39,7 @@ install:
 	@for dir in $(SUBMODULES); do \
     	echo "Running go install in $$dir..."; \
     	cd $$dir && go install; \
+		cd ..; \
 	done
 
 # Run go install in each submodule
@@ -46,6 +48,7 @@ lint:
 	@for dir in $(SUBMODULES); do \
     	echo "Running go install in $$dir..."; \
     	cd $$dir && go install; \
+		cd ..; \
 	done
 
 test:
@@ -53,12 +56,14 @@ test:
 	@for dir in $(SUBMODULES); do \
 		echo "Running go test in $$dir..."; \
 		(cd $$dir && go test ./... -v) >> go-test-report.txt 2>&1; \
+		cd ..; \
 	done
 
 fmt:
 	@for dir in $(SUBMODULES); do \
 		echo "Running go fmt in $$dir..."; \
 		cd $$dir && go fmt ./...; \
+		cd ..; \
 	done
 
 .PHONY: cover
@@ -67,6 +72,7 @@ cover:
 	@for dir in $(SUBMODULES); do \
 		echo "Generating coverage for $$dir..."; \
 		(cd $$dir && go test -coverprofile=coverage.out ./... && mv coverage.out ../cover/$$dir-coverage.out && go tool cover -html=../cover/$$dir-coverage.out -o ../cover/$$dir-coverage.html); \
+		cd ..; \
 	done
 
 .PHONY: coverage
@@ -75,6 +81,7 @@ coverage:
 	@for dir in $(SUBMODULES); do \
 		echo "Generating coverage for $$dir..."; \
 		(cd $$dir && go test -coverprofile=coverage.out ./... && mv coverage.out ../cover/$$dir-coverage.out && go tool cover -html=../cover/$$dir-coverage.out -o ../cover/$$dir-coverage.html); \
+		cd ..; \
 	done
 
 # Docker tasks
