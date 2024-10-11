@@ -25,28 +25,30 @@ func main() {
 
 	// Create actors
 	// Create and register actor1
-	actor1 := core.NewBasicActor("actor1", func(res *core.ActorResult) *core.ActorResult {
+	actor1 := core.NewBasicActor("actor1")
+	actor1.ReceiveFunc = func(res *core.ActorResult) *core.ActorResult {
 		fmt.Printf("Actor1 received: %v\n", res.Message)
 		// Send message to actor2
 		if actor2Ref, exists := RedisRegistryInstance.GetActor("actor2"); exists {
-			actor2Ref.SendMessage("Hello from Actor1")
+			actor2Ref.SendMessage("Hello from Actor1++")
 		}
 		return res
-	})
+	}
 
 	RedisRegistryInstance.RegisterActor(actor1)
 	supervisor.SuperviseActor(actor1)
 
-	actor2 := core.NewBasicActor("actor2", func(res *core.ActorResult) *core.ActorResult {
+	actor2 := core.NewBasicActor("actor2")
+	actor2.ReceiveFunc = func(res *core.ActorResult) *core.ActorResult {
 		fmt.Printf("Actor2 received: %v\n", res.Message)
+		// Send message to actor1
+		// if actor1Ref, exists := RedisRegistryInstance.GetActor("actor1"); exists {
+		// 	actor1Ref.SendMessage("Hello from Actor2**")
+		// }
 		return res
-	})
+	}
 
 	RedisRegistryInstance.RegisterActor(actor2)
-	supervisor.SuperviseActor(actor2)
-
-	// Supervise actors with the top-level supervisor
-	supervisor.SuperviseActor(actor1)
 	supervisor.SuperviseActor(actor2)
 
 	// Create a child supervisor with its own context (inherited from the parent)
@@ -56,11 +58,15 @@ func main() {
 	childSupervisor := core.NewSupervisor(childCtx)
 
 	actor3 := NewExampleRedis("actor3")
+	actor3.ReceiveFunc = func(res *core.ActorResult) *core.ActorResult {
+		fmt.Printf("Actor3 received: %v\n", res.Message)
+		return res
+	}
 
-	// Supervise actors with the child supervisor
+	// // Supervise actors with the child supervisor
 	childSupervisor.SuperviseActor(actor3)
 
-	// Supervise the child supervisor with the top-level supervisor
+	// // Supervise the child supervisor with the top-level supervisor
 	supervisor.SuperviseSupervisor(childSupervisor)
 
 	// Send test messages to all actors
@@ -70,11 +76,14 @@ func main() {
 	actor2.SendMessage("Message for actor 2")
 	actor3.SendMessage("Message for actor 3")
 
-	RedisBrokerInstance.Publish("example", "Subscribe to the example topic to receive this message.")
+	
 	// Publish a message to the broker
 
 	RedisBrokerInstance.Subscribe("example", actor1)
 	RedisBrokerInstance.Subscribe("example", actor3)
+	RedisBrokerInstance.Publish("example", "Subscribe to the example topic to receive this message.")
+	
+	//RedisBrokerInstance.Subscribe("example", actor3)
 	// Set up signal handling for graceful shutdown
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)

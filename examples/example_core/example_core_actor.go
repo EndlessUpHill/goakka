@@ -33,7 +33,7 @@ func (a *ExampleCore) ReceiveMessage(msg interface{}) *core.ActorResult {
 func NewExampleCore(id string) *ExampleCore {
 
 	return &ExampleCore{
-		BasicActor: *core.NewBasicActor(id, nil),
+		BasicActor: *core.NewBasicActor(id),
 	}
 
 }

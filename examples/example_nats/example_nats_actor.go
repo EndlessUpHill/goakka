@@ -33,7 +33,7 @@ func (a *ExampleNats) ReceiveMessage(msg interface{}) *core.ActorResult {
 func NewExampleNats(id string) *ExampleNats {
 
 	return &ExampleNats{
-		BasicActor: *core.NewBasicActor(id, nil),
+		BasicActor: *core.NewBasicActor(id),
 	}
 
 }

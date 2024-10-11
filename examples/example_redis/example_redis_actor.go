@@ -12,7 +12,7 @@ var RedisBrokerInstance *redis.RedisBroker
 
 func init() {
 	RedisRegistryInstance = core.NewActorRegistry()
-	RedisBrokerInstance = redis.NewRedisBroker("redis://localhost:6379")
+	RedisBrokerInstance = redis.NewRedisBroker("localhost:6379")
 }
 
 type ExampleRedis struct {
@@ -34,7 +34,7 @@ func (a *ExampleRedis) ReceiveMessage(msg interface{}) *core.ActorResult {
 func NewExampleRedis(id string) *ExampleRedis {
 
 	return &ExampleRedis{
-		BasicActor: *core.NewBasicActor(id, nil),
+		BasicActor: *core.NewBasicActor(id),
 	}
 
 }

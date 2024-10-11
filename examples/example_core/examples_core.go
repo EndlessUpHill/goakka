@@ -24,22 +24,28 @@ func main() {
 
 	// Create actors
 	// Create and register actor1
-	actor1 := core.NewBasicActor("actor1", func(res *core.ActorResult) *core.ActorResult {
+	actor1 := core.NewBasicActor("actor1")
+	actor1.ReceiveFunc = func(res *core.ActorResult) *core.ActorResult {
 		fmt.Printf("Actor 1 received: %v\n", res.Message)
 		// Send message to actor2
 		if actor2Ref, exists := RegistryInstance.GetActor("actor2"); exists {
 			actor2Ref.SendMessage("Hello from Actor 1")
 		}
 		return res
-	})
+	}
 
 	RegistryInstance.RegisterActor(actor1)
 	supervisor.SuperviseActor(actor1)
 
-	actor2 := core.NewBasicActor("actor2", func(res *core.ActorResult) *core.ActorResult {
+	actor2 := core.NewBasicActor("actor2")
+	actor2.ReceiveFunc = func(res *core.ActorResult) *core.ActorResult {
 		fmt.Printf("Actor 2 received: %v\n", res.Message)
+		// Send message to actor1
+		if actor1Ref, exists := RegistryInstance.GetActor("actor1"); exists {
+			actor1Ref.SendMessage("Hello from Actor 2")
+		}
 		return res
-	})
+	}
 
 	RegistryInstance.RegisterActor(actor2)
 	supervisor.SuperviseActor(actor2)
