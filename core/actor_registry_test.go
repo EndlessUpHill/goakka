@@ -11,7 +11,7 @@ import (
 func TestActorRegistry(t *testing.T) {
 
 	t.Run("TestNewActorRegistryWithDefaultSize", func(t *testing.T) {
-		// Arrange
+		// Arranges
 		registry := NewActorRegistry()
 
 		// Act & Assert
@@ -101,7 +101,6 @@ func TestActorRegistry(t *testing.T) {
 type MockActor struct {
 	name        string
 	id          uuid.UUID
-	receiveFunc func(result *ActorResult) *ActorResult
 }
 
 func (ma *MockActor) GetName() string {
@@ -114,6 +113,10 @@ func (ma *MockActor) Stop() {}
 
 func (ma *MockActor) ReceiveMessage(msg interface{}) *ActorResult {
 	return &ActorResult{}
+}
+
+func (ma *MockActor) GetContext() context.Context {
+	return context.Background()
 }
 
 func (ma *MockActor) SendMessage(msg interface{}) {}

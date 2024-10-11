@@ -22,6 +22,7 @@ type Actor interface {
 	SendMessage(msg interface{})
 	GetID() uuid.UUID
 	GetName() string
+	GetContext() context.Context
 	SetWaitGroup(wg *sync.WaitGroup)
 	SetContext(ctx context.Context)
 	SetFailureChannel(chan *ActorResult)
@@ -66,6 +67,10 @@ func (a *BasicActor) SetWaitGroup(wg *sync.WaitGroup) {
 
 func (a *BasicActor) SetContext(ctx context.Context) {
 	a.ctx = ctx
+}
+
+func (a *BasicActor) GetContext() context.Context {
+	return a.ctx
 }
 
 func (a *BasicActor) SetFailureChannel(failure chan *ActorResult) {
