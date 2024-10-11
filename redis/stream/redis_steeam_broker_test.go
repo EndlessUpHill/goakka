@@ -100,7 +100,8 @@ func TestRedisStreamPubSub(t *testing.T) {
 	wg.Add(1)
 	var msg map[string]interface{}
 
-	actor := core.NewBasicActor("test-actor", func(res *core.ActorResult) *core.ActorResult {
+	actor := core.NewBasicActor("test-actor")
+	actor.ReceiveFunc = func(res *core.ActorResult) *core.ActorResult {
 		// Store the received message and ensure it's cast correctly
 		if receivedMsg, ok := res.Message.(map[string]interface{}); ok {
 			msg = receivedMsg
@@ -110,8 +111,10 @@ func TestRedisStreamPubSub(t *testing.T) {
 
 		wg.Done() // Mark the wait group as done only after processing
 		return &core.ActorResult{}
-	})
+	}
+	
 	actor.Start()
+	
 
 	// Subscribe the actor to the Redis stream
 	err := redisStreamBroker.Subscribe("test-stream", actor)

@@ -2,10 +2,10 @@ module github.com/EndlessUpHill/goakka/redis
 
 go 1.22.5
 
-// replace github.com/EndlessUpHill/goakka/core v0.0.2 => ../core
+// replace github.com/EndlessUpHill/goakka/core v0.0.3 => ../core
 
 require (
-	github.com/EndlessUpHill/goakka/core v0.0.2
+	github.com/EndlessUpHill/goakka/core v0.0.3
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/stretchr/testify v1.9.0
