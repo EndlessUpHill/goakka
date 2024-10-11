@@ -13,11 +13,13 @@ func TestInMemorybroker(t *testing.T) {
 		received := false
 		var mockwg sync.WaitGroup
 		mockwg.Add(1)
-		mockActor := NewBasicActor("mock-actor", func(msg *ActorResult) *ActorResult {
+		mockActor := NewBasicActor("mock-actor")
+
+		mockActor.ReceiveFunc = func(msg *ActorResult) *ActorResult {	
 			received = true
 			mockwg.Done()
 			return msg
-		})
+		}
 
 		mockActor.Start()
 		defer mockActor.Stop()
@@ -46,24 +48,26 @@ func TestInMemorybroker(t *testing.T) {
 
 		mockwg.Add(2)
 
-		mockActor1 := NewBasicActor("mock-actor1", func(msg *ActorResult) *ActorResult {
+		mockActor1 := NewBasicActor("mock-actor1")
+		mockActor1.ReceiveFunc = func(msg *ActorResult) *ActorResult {
 			mu.Lock()
-			receivedMessages["mock-actor1"] = true
+			receivedMessages["mock-actor1"] = true	
 			mu.Unlock()
 			mockwg.Done()
 			return msg
-		})
+		}
 
 		mockActor1.Start()
 		defer mockActor1.Stop()
 
-		mockActor2 := NewBasicActor("mock-actor2", func(msg *ActorResult) *ActorResult {
+		mockActor2 := NewBasicActor("mock-actor2")
+		mockActor2.ReceiveFunc = func(msg *ActorResult) *ActorResult {
 			mu.Lock()
 			receivedMessages["mock-actor2"] = true
 			mu.Unlock()
 			mockwg.Done()
 			return msg
-		})
+		}
 
 		mockActor2.Start()
 		defer mockActor2.Stop()
@@ -138,14 +142,14 @@ func TestInMemorybroker(t *testing.T) {
 		messages := 1000
 
 		mockwg.Add(messages)
-		mockActor := NewBasicActorWithMailboxSize("mock-actor2", messages,
-			func(msg *ActorResult) *ActorResult {
-				mu.Lock()
-				receivedCount++
-				mu.Unlock()
-				mockwg.Done()
-				return msg
-			})
+		mockActor := NewBasicActorWithMailboxSize("mock-actor2", messages)
+		mockActor.ReceiveFunc = func(msg *ActorResult) *ActorResult {
+			mu.Lock()
+			receivedCount++
+			mu.Unlock()
+			mockwg.Done()
+			return msg
+		}
 
 		mockActor.Start()
 		defer mockActor.Stop()

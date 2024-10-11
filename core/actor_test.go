@@ -15,7 +15,10 @@ func TestActor(t *testing.T) {
 	t.Run("TestActorStartAndStop", func(t *testing.T) {
 		// Arrange
 		wg := &sync.WaitGroup{}
-		actor := NewBasicActor("test-actor", nil)
+		actor := NewBasicActor("test-actor")
+		actor.ReceiveFunc = func(result *ActorResult) *ActorResult {
+			return &ActorResult{}
+		}
 		actor.SetWaitGroup(wg)
 
 		// Act
@@ -33,7 +36,8 @@ func TestActor(t *testing.T) {
 			received = true
 			return &ActorResult{}
 		}
-		actor := NewBasicActor("test-actor", receiveFunc)
+		actor := NewBasicActor("test-actor")
+		actor.ReceiveFunc = receiveFunc
 
 		// Act
 		actor.Start()
@@ -51,7 +55,10 @@ func TestActor(t *testing.T) {
 		// Arrange
 		ctx, cancel := context.WithCancel(context.Background())
 		wg := &sync.WaitGroup{}
-		actor := NewBasicActor("test-actor", nil)
+		actor := NewBasicActor("test-actor")
+		actor.ReceiveFunc = func(result *ActorResult) *ActorResult {
+			return &ActorResult{}
+		}
 		actor.SetWaitGroup(wg)
 		actor.SetContext(ctx)
 
@@ -71,7 +78,8 @@ func TestActor(t *testing.T) {
 				Error: errors.New("test failure"),
 			}
 		}
-		actor := NewBasicActor("test-actor", receiveFunc)
+		actor := NewBasicActor("test-actor")
+		actor.ReceiveFunc = receiveFunc
 		actor.SetFailureChannel(failureChannel)
 
 		// Act
@@ -94,7 +102,10 @@ func TestActor(t *testing.T) {
 
 	t.Run("TestActorMailboxFull", func(t *testing.T) {
 		// Arrange
-		actor := NewBasicActor("test-actor", nil)
+		actor := NewBasicActor("test-actor")
+		actor.ReceiveFunc = func(result *ActorResult) *ActorResult {
+			return &ActorResult{}
+		}
 		actor.Start()
 
 		// Fill the mailbox
@@ -124,7 +135,8 @@ func TestActor(t *testing.T) {
 			return &ActorResult{}
 		}
 
-		actor := NewBasicActor("test-actor", receiveFunc)
+		actor := NewBasicActor("test-actor")
+		actor.ReceiveFunc = receiveFunc
 		actor.Start()
 
 		// Act
@@ -162,7 +174,8 @@ func TestActor(t *testing.T) {
 			return &ActorResult{}
 		}
 
-		actor := NewBasicActor("test-actor", receiveFunc)
+		actor := NewBasicActor("test-actor")
+		actor.ReceiveFunc = receiveFunc
 		actor.SetFailureChannel(failureChannel)
 		actor.Start()
 
@@ -195,16 +208,20 @@ func TestActor(t *testing.T) {
 		childWg := &sync.WaitGroup{}
 		parentWg := &sync.WaitGroup{}
 
-		childActor := NewBasicActor("child-actor", nil)
+		childActor := NewBasicActor("child-actor")
 		childActor.SetWaitGroup(childWg)
 		childActor.SetContext(ctx)
+		childActor.ReceiveFunc = func(result *ActorResult) *ActorResult {
+			return &ActorResult{}
+		}
 
-		parentActor := NewBasicActor("parent-actor", func(result *ActorResult) *ActorResult {
+		parentActor := NewBasicActor("parent-actor")
+		parentActor.ReceiveFunc = func(result *ActorResult) *ActorResult {
 			if result.Message == "cancel" {
 				cancel() // Cancel the context, causing the child to stop
 			}
 			return &ActorResult{}
-		})
+		}
 		parentActor.SetWaitGroup(parentWg)
 		parentActor.SetContext(ctx)
 
@@ -235,8 +252,9 @@ func TestActor(t *testing.T) {
 			return &ActorResult{}
 		}
 
-		parentActor := NewBasicActor("parent-actor", nil)
-		childActor := NewBasicActor("child-actor", childReceiveFunc)
+		parentActor := NewBasicActor("parent-actor")
+		childActor := NewBasicActor("child-actor")
+		childActor.ReceiveFunc = childReceiveFunc
 
 		parentActor.Start()
 		childActor.Start()
@@ -256,7 +274,10 @@ func TestActor(t *testing.T) {
 
 	t.Run("TestStressMailboxCapacity", func(t *testing.T) {
 		// Arrange
-		actor := NewBasicActor("test-actor", nil)
+		actor := NewBasicActor("test-actor")
+		actor.ReceiveFunc = func(result *ActorResult) *ActorResult {
+			return &ActorResult{}
+		}
 		actor.Start()
 
 		// Act: Send more messages than the mailbox can handle

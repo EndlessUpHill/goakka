@@ -13,13 +13,12 @@ type ActorResult struct {
 	Action  int
 	Message interface{}
 	name    string
-	id      uuid.UUID
+	ID      uuid.UUID
 }
 
 type Actor interface {
 	Start()
 	Stop()
-	ReceiveMessage(msg interface{}) *ActorResult
 	SendMessage(msg interface{})
 	GetID() uuid.UUID
 	GetName() string
@@ -35,21 +34,21 @@ type BasicActor struct {
 	stop           chan struct{}
 	wg             *sync.WaitGroup
 	ctx            context.Context
-	receiveFunc    func(result *ActorResult) *ActorResult
+	ReceiveFunc    func(result *ActorResult) *ActorResult
 	failureChannel chan *ActorResult
 }
 
-func NewBasicActor(name string, recieveFunc func(result *ActorResult) *ActorResult) *BasicActor {
-	return NewBasicActorWithMailboxSize(name, 100, recieveFunc)
+//  recieveFunc func(result *ActorResult) *ActorResult
+func NewBasicActor(name string) *BasicActor {
+	return NewBasicActorWithMailboxSize(name, 100,)
 }
 
-func NewBasicActorWithMailboxSize(name string, size int, recieveFunc func(result *ActorResult) *ActorResult) *BasicActor {
+func NewBasicActorWithMailboxSize(name string, size int) *BasicActor {
 	return &BasicActor{
 		id:          uuid.New(),
 		name:        name,
 		mailbox:     make(chan interface{}, size),
 		stop:        make(chan struct{}),
-		receiveFunc: recieveFunc,
 	}
 }
 
@@ -92,15 +91,17 @@ func (a *BasicActor) Start() {
 			select {
 			case msg := <-a.mailbox:
 				var result *ActorResult
-				if a.receiveFunc != nil {
+				if a.ReceiveFunc != nil {
 					actor := ActorResult{
 						Message: msg,
 						name:    a.name,
-						id:      a.id,
+						ID:      a.id,
 					}
-					result = a.receiveFunc(&actor)
+					result = a.ReceiveFunc(&actor)
 				} else {
-					result = a.ReceiveMessage(msg)
+					result = &ActorResult{
+						Error: fmt.Errorf("no receive function defined for actor %s", a.GetID()),
+					}
 				}
 
 				if result.Error != nil {
@@ -128,10 +129,10 @@ func (a *BasicActor) Stop() {
 	}
 }
 
-func (a *BasicActor) ReceiveMessage(msg interface{}) *ActorResult {
-	fmt.Printf("!!!Actor received message: %v\n", msg)
-	return &ActorResult{}
-}
+// func (a *BasicActor) ReceiveMessage(msg interface{}) *ActorResult {
+// 	fmt.Printf("!!!Actor received message: %v\n", msg)
+// 	return &ActorResult{}
+// }
 
 func (a *BasicActor) SendMessage(msg interface{}) {
 	select {

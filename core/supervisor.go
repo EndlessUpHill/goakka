@@ -107,7 +107,7 @@ func (s *Supervisor) Wait() {
 }
 
 func (s *Supervisor) handleActorFailure(result *ActorResult) {
-	actor := s.findActor(result.id)
+	actor := s.findActor(result.ID)
 
 	switch result.Action {
 	case ACTOR_RESTART:
